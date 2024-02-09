@@ -10,6 +10,7 @@ public class Main {
 
 class StressTester {
     private final int desiredCounterValue;
+
     StressTester(int desiredCounterValue) {
         this.desiredCounterValue = desiredCounterValue;
     }
@@ -38,9 +39,24 @@ class ThreadSpawner {
     ThreadSpawner(int threadCounterValue) {
         this.threadCounterValue = threadCounterValue;
     }
+
     public int run() {
-        return this.testQueuedExecutor();
+        //return this.testQueuedExecutor();
+        return this.testLockFreeConcurrentCounter();
         //return this.testSynchronisedCounter();
+    }
+
+    // Using an unsynchronised counter will basically never work, as the threads interleave
+    private int testSynchronisedCounter() {
+        Counter counter = new SynchronisedCounter();
+        this.simpleSpawnTwoThreads(counter);
+        return counter.getValue();
+    }
+
+    private int testLockFreeConcurrentCounter() {
+        Counter counter = new LockFreeConcurrentCounter();
+        this.simpleSpawnTwoThreads(counter);
+        return counter.getValue();
     }
 
     private int testQueuedExecutor() {
@@ -59,10 +75,7 @@ class ThreadSpawner {
         return counter.getValue();
     }
 
-    // Using an unsynchronised counter will basically never work, as the threads interleave
-    private int testSynchronisedCounter() {
-        Counter counter = new SynchronisedCounter();
-
+    private void simpleSpawnTwoThreads(Counter counter) {
         RunnableCounterIncrementor c1 = new RunnableCounterIncrementor(counter, this.threadCounterValue);
         RunnableCounterIncrementor c2 = new RunnableCounterIncrementor(counter, this.threadCounterValue);
 
@@ -73,13 +86,6 @@ class ThreadSpawner {
         t2.start();
 
         while (t1.getState() != Thread.State.TERMINATED || t2.getState() != Thread.State.TERMINATED) {
-//            try {
-//                Thread.sleep(1);
-//            } catch (InterruptedException e) {
-//                System.out.println("got interrupted exception: " + e);
-//            }
         }
-
-        return counter.getValue();
     }
 }
