@@ -1,4 +1,4 @@
-package org.example;
+package org.example.counter;
 
 public class RunnableCounterIncrementor implements Runnable {
     private final Counter counter;

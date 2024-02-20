@@ -1,5 +1,9 @@
 package org.example;
 
+import org.example.counter.*;
+import org.example.executor.Executor;
+import org.example.executor.QueuedExecutor;
+
 public class Main {
     public static void main(String[] args) {
         int desiredCounterValue = 10000;

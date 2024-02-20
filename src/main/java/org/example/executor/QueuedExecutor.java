@@ -1,4 +1,4 @@
-package org.example;
+package org.example.executor;
 
 import java.util.Queue;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -7,7 +7,7 @@ public class QueuedExecutor implements Executor {
     private final Scheduler scheduler;
     private final Thread schedulerThread;
 
-    QueuedExecutor() {
+    public QueuedExecutor() {
         this.scheduler = new Scheduler();
         this.schedulerThread = new Thread(scheduler);
         this.schedulerThread.start();
@@ -53,11 +53,11 @@ class Scheduler implements Runnable {
             }
 
             if (this.jobQueue.peek() != null) {
-                    Runnable job = this.jobQueue.poll();
-                    if (job != null) {
-                        job.run();
-                    }
-                    // TODO: trying to run jobs on their own threads, rather than the scheduler's thread
+                Runnable job = this.jobQueue.poll();
+                if (job != null) {
+                    job.run();
+                }
+                // TODO: trying to run jobs on their own threads, rather than the scheduler's thread
 //                    Thread jobThread = new Thread(this.jobQueue.poll());
 //                    jobThread.start();
 //                    try {
@@ -65,9 +65,9 @@ class Scheduler implements Runnable {
 //                    } catch (InterruptedException ie) {
 //                        System.out.println("Job thread has been interrupted: " + ie);
 //                    }
-                }
             }
         }
+    }
 
     public void schedule(Runnable job) throws IllegalStateException {
         if (this.shutdown) {

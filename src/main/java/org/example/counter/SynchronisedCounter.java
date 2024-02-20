@@ -1,4 +1,4 @@
-package org.example;
+package org.example.counter;
 
 public class SynchronisedCounter implements Counter {
     private int count;

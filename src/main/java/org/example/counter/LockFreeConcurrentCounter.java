@@ -1,9 +1,9 @@
-package org.example;
+package org.example.counter;
 
 public class LockFreeConcurrentCounter implements Counter {
     private final Stack stack;
 
-    LockFreeConcurrentCounter() {
+    public LockFreeConcurrentCounter() {
         this.stack = new Stack();
     }
 
