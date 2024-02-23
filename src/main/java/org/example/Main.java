@@ -1,7 +1,10 @@
 package org.example;
 
-import org.example.counter.*;
-import org.example.executor.Executor;
+import org.example.counter.Counter;
+import org.example.counter.LockFreeConcurrentCounter;
+import org.example.counter.SynchronisedCounter;
+import org.example.counter.UnsynchronisedCounter;
+import org.example.executor.MyExecutor;
 import org.example.executor.QueuedExecutor;
 
 public class Main {
@@ -65,7 +68,7 @@ class ThreadSpawner {
 
     private int testQueuedExecutor() {
         Counter counter = new UnsynchronisedCounter();
-        Executor executor = new QueuedExecutor();
+        MyExecutor executor = new QueuedExecutor();
 
         RunnableCounterIncrementor c1 = new RunnableCounterIncrementor(counter, this.threadCounterValue);
         RunnableCounterIncrementor c2 = new RunnableCounterIncrementor(counter, this.threadCounterValue);

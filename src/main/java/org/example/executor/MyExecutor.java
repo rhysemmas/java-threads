@@ -1,6 +1,6 @@
 package org.example.executor;
 
-public interface Executor {
+public interface MyExecutor {
     void execute(Runnable job);
 
     void shutdown();

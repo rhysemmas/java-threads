@@ -3,7 +3,7 @@ package org.example.executor;
 import java.util.Queue;
 import java.util.concurrent.ArrayBlockingQueue;
 
-public class QueuedExecutor implements Executor {
+public class QueuedExecutor implements MyExecutor {
     private final Scheduler scheduler;
     private final Thread schedulerThread;
 
