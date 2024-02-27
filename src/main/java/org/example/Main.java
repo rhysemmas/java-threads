@@ -6,6 +6,10 @@ import org.example.counter.SynchronisedCounter;
 import org.example.counter.UnsynchronisedCounter;
 import org.example.executor.MyExecutor;
 import org.example.executor.QueuedExecutor;
+import org.example.executor.QueuingThreadPool;
+import org.example.executor.ThreadPoolExecutor;
+
+import java.util.concurrent.ExecutionException;
 
 public class Main {
     public static void main(String[] args) {
@@ -24,10 +28,12 @@ class StressTester {
 
     public void stress() {
         int counter = 0;
+
+        // All tests currently assume that there will ultimately be 2 threads doing the 'work'
+        ThreadSpawner spawner = new ThreadSpawner(this.desiredCounterValue / 2);
+
         while (true) {
             System.out.println("Starting test with id: " + counter);
-            // Assumes spawning 2 threads
-            ThreadSpawner spawner = new ThreadSpawner(this.desiredCounterValue / 2);
             int value = spawner.run();
             if (value != this.desiredCounterValue) {
                 System.out.println("Unexpected value: " + value);
@@ -42,17 +48,42 @@ class StressTester {
 
 class ThreadSpawner {
     private final int threadCounterValue;
+    private final QueuingThreadPool<Integer> threadPool;
 
     ThreadSpawner(int threadCounterValue) {
         this.threadCounterValue = threadCounterValue;
+        this.threadPool = new QueuingThreadPool<>();
     }
 
     public int run() {
-        //return this.testQueuedExecutor();
-        return this.testLockFreeConcurrentCounter();
-        //return this.testSynchronisedCounter();
+        return this.testThreadPoolExecutor(this.threadPool);
     }
 
+    private ThreadPoolExecutor<Integer> setupThreadPool() {
+        return new QueuingThreadPool<>();
+    }
+
+    private int testThreadPoolExecutor(ThreadPoolExecutor<Integer> executor) {
+        CallableCounterIncrementor c1 = new CallableCounterIncrementor(this.threadCounterValue);
+        CallableCounterIncrementor c2 = new CallableCounterIncrementor(this.threadCounterValue);
+
+        ThreadPoolExecutor.MyFuture<Integer> c1Future = executor.submit(c1);
+        ThreadPoolExecutor.MyFuture<Integer> c2Future = executor.submit(c2);
+
+        try {
+            Integer c1Value = c1Future.get();
+            Integer c2Value = c2Future.get();
+            return c1Value + c2Value;
+        } catch (ExecutionException ee) {
+            System.out.println("got unexpected execution exception: " + ee);
+            return 0;
+        }
+    }
+
+    ////////////////////////////
+    // Other test snippets below
+    ////////////////////////////
+    //
     // Using an unsynchronised counter will basically never work, as the threads interleave
     private int testSynchronisedCounter() {
         Counter counter = new SynchronisedCounter();
