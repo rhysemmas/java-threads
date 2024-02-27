@@ -37,4 +37,26 @@ public class UnsynchronisedQueueTest {
         assertEquals("wow2", queue.next());
         assertEquals("wow3", queue.next());
     }
+
+    @Test
+    @DisplayName("Test queue works with nulls")
+    void testNulls() {
+        UnsynchronisedQueue<Object> queue = new UnsynchronisedQueue<>(2);
+        queue.add(1);
+        queue.add(null);
+
+        assertEquals(1, queue.next());
+        assertEquals(null, queue.next());
+    }
+
+    @Test
+    @DisplayName("Test adding, removing, then adding again works")
+    void testAddRemoveAdd() {
+        UnsynchronisedQueue<Object> queue = new UnsynchronisedQueue<>(2);
+        queue.add(0);
+        queue.next();
+        queue.add(1);
+        System.out.println(queue.toString());
+        assertEquals(1, queue.next());
+    }
 }

@@ -1,5 +1,7 @@
 package org.example.queue;
 
+import java.util.StringJoiner;
+
 public class UnsynchronisedQueue<T> implements MyQueue<T> {
     private T[] itemQueue;
     private int startingIndex;
@@ -18,13 +20,17 @@ public class UnsynchronisedQueue<T> implements MyQueue<T> {
             throw new IllegalStateException("queue is empty");
         }
 
-        T value = this.itemQueue[this.startingIndex];
+        T value = itemQueue[startingIndex];
         startingIndex++;
         return value;
     }
 
     // Check what is the next item in the queue
     public T peek() {
+        if (startingIndex >= itemQueue.length) {
+            return null;
+        }
+        
         return itemQueue[startingIndex];
     }
 
@@ -32,7 +38,7 @@ public class UnsynchronisedQueue<T> implements MyQueue<T> {
     public void add(T value) throws IllegalStateException {
         // If we have previously pulled things off the queue, and we are about to run out of space,
         // reclaim some space from the front
-        if (startingIndex != 0 && nextEmptyIndex + 1 >= itemQueue.length) {
+        if (startingIndex != 0 && nextEmptyIndex >= itemQueue.length) {
             compact();
         }
 
@@ -64,5 +70,20 @@ public class UnsynchronisedQueue<T> implements MyQueue<T> {
         nextEmptyIndex = compactedQueue.length - startingIndex;
 
         startingIndex = 0;
+    }
+
+    // TODO: remove, for debugging to print out the entire queue
+    @Override
+    public String toString() {
+        StringJoiner joiner = new StringJoiner(",");
+        for (int i = 0; i < itemQueue.length; i++) {
+            var item = itemQueue[i];
+            if (item != null) {
+                joiner.add(itemQueue[i].toString());
+            }
+        }
+        joiner.add("starting index: " + startingIndex);
+        joiner.add("next empty index: " + nextEmptyIndex);
+        return joiner.toString();
     }
 }
