@@ -24,8 +24,9 @@ public class QueuingThreadPool<V> implements ThreadPoolExecutor<V> {
         System.out.println("QueuingThreadPool/got job!");
         Channel<Status<V>> resultChannel = new Channel<>();
         Channel<ExecutionException> errorChannel = new Channel<>();
+        Channel<Boolean> cancelChannel = new Channel<>();
 
-        Job<V> job = new Job<>(submittedJob, resultChannel, errorChannel);
+        Job<V> job = new Job<>(submittedJob, resultChannel, errorChannel, cancelChannel);
         MyFuture<V> futureResult = new Result<>(job);
 
         System.out.println("QueuingThreadPool/sending notification of new job!");
@@ -34,7 +35,10 @@ public class QueuingThreadPool<V> implements ThreadPoolExecutor<V> {
         return futureResult;
     }
 
-    record Job<V>(Callable<V> jobToRun, Channel<Status<V>> resultChannel, Channel<ExecutionException> errorChannel) {
+    record Job<V>(Callable<V> jobToRun,
+                  Channel<Status<V>> resultChannel,
+                  Channel<ExecutionException> errorChannel,
+                  Channel<Boolean> cancelChannel) {
     }
 
     record Status<V>(V value, boolean success) {
@@ -43,17 +47,25 @@ public class QueuingThreadPool<V> implements ThreadPoolExecutor<V> {
     static class Result<V> implements MyFuture<V> {
         private final Channel<Status<V>> resultChannel;
         private final Channel<ExecutionException> errorChannel;
+        private final Channel<Boolean> cancelChannel;
+        private boolean isCancelled;
 
         Result(Job<V> job) {
             this.resultChannel = job.resultChannel;
             this.errorChannel = job.errorChannel;
+            this.cancelChannel = job.cancelChannel;
         }
 
         public V get() throws ExecutionException {
+            if (isCancelled) {
+                System.out.println("Result/is cancelled, returning null");
+                return null;
+            }
+
             Status<V> status = resultChannel.receive();
             // TODO: clean this up
             if (!status.success) {
-                if (!errorChannel.isEmpty()) {
+                if (errorChannel.hasMessage()) {
                     throw new ExecutionException(errorChannel.receive());
                 } else {
                     // TODO: what to do if unsuccessful without error?
@@ -66,7 +78,10 @@ public class QueuingThreadPool<V> implements ThreadPoolExecutor<V> {
         }
 
         public boolean cancel() {
-            return false;
+            // TODO: need to return false if we get some kind of exception while sending on the channel
+            cancelChannel.send(true);
+            isCancelled = true;
+            return true;
         }
     }
 }
@@ -98,8 +113,8 @@ class Channel<V> {
         return received;
     }
 
-    public boolean isEmpty() {
-        return data.isEmpty();
+    public boolean hasMessage() {
+        return !data.isEmpty();
     }
 }
 
@@ -179,7 +194,7 @@ class Coordinator<V> implements Runnable {
     // when workers have completed and updating the freeWorkers queue - might need to synchronise or worry about other
     // methods of thread safety (could make more channels haha!)
     private void checkForIdleWorkers() throws IllegalStateException {
-        if (!workersDoneChannel.isEmpty()) {
+        if (workersDoneChannel.hasMessage()) {
             Worker<V> idleWorker = workersDoneChannel.receive();
             try {
                 freeWorkers.add(idleWorker);
@@ -190,7 +205,7 @@ class Coordinator<V> implements Runnable {
     }
 
     private void receiveNewJob() throws IllegalStateException {
-        if (!jobNotificationChannel.isEmpty()) {
+        if (jobNotificationChannel.hasMessage()) {
             QueuingThreadPool.Job<V> submittedJob = jobNotificationChannel.receive();
             try {
                 jobQueue.add(submittedJob);
@@ -205,15 +220,16 @@ class Coordinator<V> implements Runnable {
             return;
         }
 
-        QueuingThreadPool.Job<V> job = null;
+        QueuingThreadPool.Job<V> job;
         try {
             job = jobQueue.next();
         } catch (IllegalStateException ise) {
-            System.out.println("got exception while taking next from job queue: " + ise);
+            throw new IllegalStateException("got exception while taking next from job queue: " + ise);
         }
 
-        if (job == null) {
-            throw new IllegalStateException("got unexpected null job");
+        if (jobIsCancelled(job)) {
+            System.out.println("job has been cancelled, will not schedule");
+            return;
         }
 
         Worker<V> worker;
@@ -225,6 +241,13 @@ class Coordinator<V> implements Runnable {
         } catch (IllegalStateException ise) {
             System.out.println("got exception while taking next from worker queue: " + ise);
         }
+    }
+
+    private boolean jobIsCancelled(QueuingThreadPool.Job<V> job) {
+        if (job.cancelChannel().hasMessage()) {
+            return job.cancelChannel().receive();
+        }
+        return false;
     }
 }
 

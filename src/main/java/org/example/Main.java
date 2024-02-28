@@ -70,9 +70,19 @@ class ThreadSpawner {
         ThreadPoolExecutor.MyFuture<Integer> c1Future = executor.submit(c1);
         ThreadPoolExecutor.MyFuture<Integer> c2Future = executor.submit(c2);
 
+        // After calling cancel() the coordinator will try not to schedule the job on a thread, but it is not
+        // guaranteed. Even if the job does get scheduled, though, get() will return null.
+        //c1Future.cancel();
+
         try {
             Integer c1Value = c1Future.get();
             Integer c2Value = c2Future.get();
+
+            if (c1Value == null || c2Value == null) {
+                System.out.println("Test/got null value");
+                return 0;
+            }
+
             return c1Value + c2Value;
         } catch (ExecutionException ee) {
             System.out.println("got unexpected execution exception: " + ee);
