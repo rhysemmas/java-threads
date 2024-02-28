@@ -98,7 +98,7 @@ class Channel<V> {
             data.put(value);
         } catch (InterruptedException ie) {
             // TODO: handle exception
-            System.out.println("channel got interrupted exception while putting: " + ie);
+            System.out.println("Channel/got interrupted exception while putting: " + ie);
         }
     }
 
@@ -108,7 +108,7 @@ class Channel<V> {
             received = data.take();
         } catch (InterruptedException ie) {
             // TODO: handle exception
-            System.out.println("channel got interrupted exception while receiving: " + ie);
+            System.out.println("Channel/got interrupted exception while receiving: " + ie);
         }
         return received;
     }
@@ -145,13 +145,13 @@ class Coordinator<V> implements Runnable {
             try {
                 workers.put(worker, work);
             } catch (IllegalArgumentException iae) {
-                System.out.println("got exception adding worker to workers map: " + iae);
+                System.out.println("Coordinator/got exception adding worker to workers map: " + iae);
             }
 
             try {
                 freeWorkers.add(worker);
             } catch (IllegalStateException ise) {
-                System.out.println("got exception adding worker to free workers queue: " + ise);
+                System.out.println("Coordinator/got exception adding worker to free workers queue: " + ise);
             }
         }
     }
@@ -166,26 +166,26 @@ class Coordinator<V> implements Runnable {
         for (Worker<V> worker : workers.keySet()) {
             Thread thread = new Thread(worker);
             thread.start();
-            System.out.println("Started worker with id: " + worker.getId());
+            System.out.println("Coordinator/Started worker with id: " + worker.getId());
         }
 
         while (true) {
             try {
                 checkForIdleWorkers();
             } catch (IllegalStateException ise) {
-                System.out.println("got exception while checking for idle workers: " + ise);
+                System.out.println("Coordinator/got exception while checking for idle workers: " + ise);
             }
 
             try {
                 receiveNewJob();
             } catch (IllegalStateException ise) {
-                System.out.println("got exception while receiving new job: " + ise);
+                System.out.println("Coordinator/got exception while receiving new job: " + ise);
             }
 
             try {
                 scheduleNewJob();
             } catch (IllegalStateException ise) {
-                System.out.println("got exception while scheduling worker: " + ise);
+                System.out.println("Coordinator/got exception while scheduling worker: " + ise);
             }
         }
     }
@@ -228,7 +228,7 @@ class Coordinator<V> implements Runnable {
         }
 
         if (jobIsCancelled(job)) {
-            System.out.println("job has been cancelled, will not schedule");
+            System.out.println("Coordinator/job has been cancelled, will not schedule");
             return;
         }
 
@@ -239,7 +239,7 @@ class Coordinator<V> implements Runnable {
             work.newJobChannel.send(job);
             System.out.println("Coordinator/scheduling job on worker id: " + worker.getId());
         } catch (IllegalStateException ise) {
-            System.out.println("got exception while taking next from worker queue: " + ise);
+            System.out.println("Coordinator/got exception while taking next from worker queue: " + ise);
         }
     }
 

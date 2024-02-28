@@ -33,13 +33,13 @@ class StressTester {
         ThreadSpawner spawner = new ThreadSpawner(this.desiredCounterValue / 2);
 
         while (true) {
-            System.out.println("Starting test with id: " + counter);
+            System.out.println("Test/Starting test with id: " + counter);
             int value = spawner.run();
             if (value != this.desiredCounterValue) {
-                System.out.println("Unexpected value: " + value);
+                System.out.println("Test/Unexpected value: " + value);
                 break;
             } else {
-                System.out.println("Got expected value of: " + value);
+                System.out.println("Test/Got expected value of: " + value);
             }
             counter++;
         }
@@ -72,7 +72,7 @@ class ThreadSpawner {
 
         // After calling cancel() the coordinator will try not to schedule the job on a thread, but it is not
         // guaranteed. Even if the job does get scheduled, though, get() will return null.
-        //c1Future.cancel();
+        c1Future.cancel();
 
         try {
             Integer c1Value = c1Future.get();
@@ -85,7 +85,7 @@ class ThreadSpawner {
 
             return c1Value + c2Value;
         } catch (ExecutionException ee) {
-            System.out.println("got unexpected execution exception: " + ee);
+            System.out.println("Test/got unexpected execution exception: " + ee);
             return 0;
         }
     }
